@@ -1,6 +1,6 @@
 {
   "name": "fairquery-sanctions-screener-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "stdio MCP server for Fairquery Sanctions & Watchlist Screener (Apify Actor)",
   "type": "module",
   "bin": {
