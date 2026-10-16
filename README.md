@@ -19,7 +19,7 @@ Use it when an agent or workflow needs to:
 | --- | --- | --- |
 | `OFAC_SDN` | OFAC Specially Designated Nationals | `sanctionslistservice.ofac.treas.gov` SDN.CSV + ALT.CSV + ADD.CSV |
 | `OFAC_CONS` | OFAC Consolidated (non-SDN: SSI, NS-MBS, FSE, …) | CONS_PRIM / CONS_ALT / CONS_ADD.CSV |
-| `EU` | EU Consolidated Financial Sanctions List | `webgate.ec.europa.eu/fsd/fsf` CSV 1.1 |
+| `EU` | EU Consolidated Financial Sanctions List | `webgate.ec.europa.eu/fsd/fsf` CSV 1.1 (falls back to CSV 1.0) |
 | `UK` | UK Sanctions List (incl. OFSI asset-freeze targets) | `sanctionslist.fcdo.gov.uk` CSV |
 | `UN` | UN Security Council Consolidated List | `scsanctions.un.org` XML |
 
@@ -45,7 +45,7 @@ Lists are cached in memory for the run only and never stored. If a source is dow
 | `country` | string | – | Default country for all names |
 | `excludeNonMatchingCountry` | bool | `false` | |
 | `dobYearTolerance` | int | `1` | |
-| `listDownloadTimeoutSecs` | int | `120` | Per list file |
+| `listDownloadTimeoutSecs` | int | `60` | Per list file |
 | `maxNames` | int | `10000` | Safety cap |
 
 ```json

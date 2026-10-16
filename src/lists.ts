@@ -64,7 +64,7 @@ const UA = 'FairqueryBot/1.0 (+https://apify.com/fairquery; sanctions screening)
 
 async function get(url: string, timeoutMs: number): Promise<Response> {
     let last: unknown;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 2; attempt++) {
         try {
             const res = await fetch(url, {
                 headers: { 'user-agent': UA },
@@ -145,7 +145,17 @@ async function loadOfac(list: 'OFAC_SDN' | 'OFAC_CONS', t: number): Promise<Entr
 const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 async function loadEu(t: number): Promise<Entry[]> {
-    const res = await get(LIST_META.EU.urls[0], t);
+    let res: Response | null = null;
+    const errors: string[] = [];
+    for (const u of LIST_META.EU.urls) {
+        try {
+            res = await get(u, t);
+            break;
+        } catch (e) {
+            errors.push(e instanceof Error ? e.message : String(e));
+        }
+    }
+    if (!res) throw new Error(errors.join(' | '));
     const parser = Readable.fromWeb(res.body as unknown as WebReadableStream).pipe(
         parse({ delimiter: ';', relax_column_count: true, relax_quotes: true, skip_empty_lines: true, bom: true }),
     );

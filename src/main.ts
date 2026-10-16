@@ -47,7 +47,7 @@ const minScore = input.minScore ?? 85;
 const maxMatches = input.maxMatchesPerName ?? 10;
 const tolerance = input.dobYearTolerance ?? 1;
 const strictCountry = input.excludeNonMatchingCountry ?? false;
-const timeoutMs = (input.listDownloadTimeoutSecs ?? 120) * 1000;
+const timeoutMs = (input.listDownloadTimeoutSecs ?? 60) * 1000;
 const maxNames = input.maxNames ?? 10000;
 
 const queries: Query[] = [

@@ -76,7 +76,7 @@
             "title": "List download timeout (s)",
             "type": "integer",
             "description": "Per list file. A list that cannot be downloaded is reported in lists_unavailable; the others are still screened.",
-            "default": 120,
+            "default": 60,
             "minimum": 20,
             "maximum": 600
         },
