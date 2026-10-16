@@ -1,0 +1,8 @@
+{
+    "$schema": "https://apify.com/schemas/v1/key_value_store.ide.json",
+    "actorKeyValueStoreSchemaVersion": 1,
+    "title": "Sanctions screening key-value store",
+    "collections": {
+        "runSummary": { "title": "Run summary", "description": "Per-list load status (entries, download time, errors, source URLs), counts, charged events, settings, disclaimer.", "key": "RUN_SUMMARY", "contentTypes": ["application/json"] }
+    }
+}

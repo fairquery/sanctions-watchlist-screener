@@ -1,0 +1,92 @@
+{
+    "$schema": "https://apify.com/schemas/v1/input.ide.json",
+    "title": "Sanctions & Watchlist Screener",
+    "description": "Screen names against official sanctions lists.",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "names": {
+            "title": "Names",
+            "type": "array",
+            "editor": "stringList",
+            "description": "People or organisations to screen, one per line.",
+            "prefill": ["Vladimir Putin", "Banco Nacional de Cuba", "Jane Example Smith"]
+        },
+        "queries": {
+            "title": "Detailed queries",
+            "type": "array",
+            "editor": "json",
+            "description": "Optional: [{\"name\": \"Ali Khamenei\", \"id\": \"cust-42\", \"country\": \"IR\", \"dateOfBirth\": \"1939-04-19\", \"entityType\": \"individual\"}]. country = ISO-2 or name; dateOfBirth = YYYY or YYYY-MM-DD.",
+            "default": []
+        },
+        "lists": {
+            "title": "Lists",
+            "type": "array",
+            "editor": "select",
+            "description": "Which official lists to screen against. Default: all five.",
+            "items": { "type": "string", "enum": ["OFAC_SDN", "OFAC_CONS", "EU", "UK", "UN"], "enumTitles": ["OFAC SDN (US)", "OFAC Consolidated non-SDN (US)", "EU Consolidated Financial Sanctions", "UK Sanctions List (FCDO/OFSI)", "UN Security Council Consolidated"] },
+            "default": ["OFAC_SDN", "OFAC_CONS", "EU", "UK", "UN"]
+        },
+        "minScore": {
+            "title": "Minimum match score (0-100)",
+            "type": "integer",
+            "description": "Fuzzy name score threshold. 85 balances recall and noise; use 90+ for fewer false positives, 80 for more recall.",
+            "default": 85,
+            "minimum": 60,
+            "maximum": 100
+        },
+        "maxMatchesPerName": {
+            "title": "Max matches per name",
+            "type": "integer",
+            "description": "Top matches returned per name (match_count still reports the total).",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+        },
+        "entityType": {
+            "title": "Entity type",
+            "type": "string",
+            "editor": "select",
+            "description": "Default for all names; a query's own entityType wins.",
+            "enum": ["any", "individual", "entity"],
+            "enumTitles": ["Any", "Individuals only", "Organisations, vessels, aircraft"],
+            "default": "any"
+        },
+        "country": {
+            "title": "Country (default for all names)",
+            "type": "string",
+            "editor": "textfield",
+            "description": "ISO-2 code or country name. Adds country_match to each match; see excludeNonMatchingCountry."
+        },
+        "excludeNonMatchingCountry": {
+            "title": "Drop matches with a different country",
+            "type": "boolean",
+            "description": "If on, matches whose listed countries do not include the query country are removed (entries without country data are kept).",
+            "default": false
+        },
+        "dobYearTolerance": {
+            "title": "Date-of-birth year tolerance",
+            "type": "integer",
+            "description": "When a query has dateOfBirth, listed individuals whose birth years differ by more than this are dropped (entries without DOB are kept).",
+            "default": 1,
+            "minimum": 0,
+            "maximum": 10
+        },
+        "listDownloadTimeoutSecs": {
+            "title": "List download timeout (s)",
+            "type": "integer",
+            "description": "Per list file. A list that cannot be downloaded is reported in lists_unavailable; the others are still screened.",
+            "default": 120,
+            "minimum": 20,
+            "maximum": 600
+        },
+        "maxNames": {
+            "title": "Max names",
+            "type": "integer",
+            "description": "Safety cap per run.",
+            "default": 10000,
+            "minimum": 1,
+            "maximum": 200000
+        }
+    }
+}

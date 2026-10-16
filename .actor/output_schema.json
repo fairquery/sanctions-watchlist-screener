@@ -1,0 +1,9 @@
+{
+    "$schema": "https://apify.com/schemas/v1/output.ide.json",
+    "actorOutputSchemaVersion": 1,
+    "title": "Sanctions screening output",
+    "properties": {
+        "dataset": { "type": "string", "title": "Results (screening / error rows)", "template": "{{links.apiDefaultDatasetUrl}}/items" },
+        "runSummary": { "type": "string", "title": "Run summary (list versions, counts)", "template": "{{links.apiDefaultKeyValueStoreUrl}}/records/RUN_SUMMARY" }
+    }
+}

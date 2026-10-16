@@ -1,0 +1,42 @@
+{
+    "$schema": "https://apify.com/schemas/v1/dataset.ide.json",
+    "actorSpecification": 1,
+    "fields": {
+        "type": "object",
+        "properties": {
+            "schema_version": { "type": "string" },
+            "type": { "type": "string", "enum": ["screening", "error"] },
+            "query": { "type": ["object", "null"] },
+            "status": { "type": "string", "enum": ["potential_match", "no_match"] },
+            "best_score": { "type": ["number", "null"] },
+            "match_count": { "type": "integer" },
+            "matches": { "type": "array", "items": { "type": "object" } },
+            "lists_screened": { "type": "array", "items": { "type": "string" } },
+            "lists_unavailable": { "type": "array", "items": { "type": "string" } },
+            "min_score": { "type": "number" },
+            "screened_at": { "type": "string" },
+            "disclaimer": { "type": "string" },
+            "code": { "type": "string" },
+            "message": { "type": "string" },
+            "retryable": { "type": "boolean" }
+        }
+    },
+    "views": {
+        "overview": {
+            "title": "Overview",
+            "transformation": { "fields": ["query.name", "status", "best_score", "match_count", "lists_unavailable", "code", "message"], "flatten": ["query"] },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "query.name": { "label": "Name" },
+                    "status": { "label": "Status" },
+                    "best_score": { "label": "Best score", "format": "number" },
+                    "match_count": { "label": "Matches", "format": "number" },
+                    "lists_unavailable": { "label": "Lists unavailable", "format": "array" },
+                    "code": { "label": "Error code" },
+                    "message": { "label": "Error" }
+                }
+            }
+        }
+    }
+}
