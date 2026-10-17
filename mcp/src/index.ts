@@ -22,7 +22,7 @@ const SOURCES = [
     { id: 'UN', name: 'UN Security Council Consolidated List', authority: 'United Nations Security Council', url: 'https://scsanctions.un.org/resources/xml/en/consolidated.xml' },
 ];
 
-const server = new McpServer({ name: 'fairquery-sanctions-screener', version: '1.0.1' });
+const server = new McpServer({ name: 'fairquery-sanctions-screener', version: '1.0.2' });
 
 server.registerTool(
     'screen_names',
@@ -32,54 +32,54 @@ server.registerTool(
             'WHAT: Fuzzy-match people or organisation names against the OFAC SDN, OFAC Consolidated (non-SDN), EU, UK and UN sanctions lists, downloaded fresh from the official sources on every run. Order-, case- and diacritics-insensitive; optional country and date-of-birth filters per name.',
             'WHEN TO USE: KYC/KYB onboarding, vendor or counterparty checks, bulk re-screening of customer lists. Put all names into one call (lists are downloaded once per run).',
             'WHEN NOT TO USE: to see which lists/authorities are covered or to cite sources, call list_sources (free). Not a PEP/adverse-media check, not a certified screening service.',
-            'COST: paid. Runs Apify Actor fairquery/sanctions-watchlist-screener with your APIFY_TOKEN; pay-per-event "name-screened", once per name that gets a screening row (nothing charged if no list could be downloaded). List download takes ~10-40 s, then hundreds of names/s.',
+            'COST: paid. Runs Apify Actor fairquery/sanctions-watchlist-screener with your APIFY_TOKEN; pay-per-event "name-screened": $0.005 per name that gets a screening row, match or no match (nothing charged if no list could be downloaded; error rows free). 200 names ~ $1.00. List download takes ~10-40 s, then hundreds of names/s.',
             'RETURNS: {count, items}. type="screening" row per name: query, status (potential_match | no_match), best_score 0-100, match_count, matches[] (list, entry id, primary name, aliases, programs, countries, DOB, score, country_match, dob_match), lists_screened, lists_unavailable, min_score, screened_at, disclaimer; or type="error" rows (code, message).',
             'EXAMPLE: {"queries":[{"name":"Banco Nacional de Cuba","entityType":"entity"}],"minScore":90} -> one screening row, status potential_match with OFAC_SDN matches.',
-            'Provide names and/or queries (at least one). ' + DISCLAIMER,
+            'PARAMETERS: names and/or queries: at least one is required although the schema marks both optional (neither -> a free INPUT_EMPTY error row); both may be combined and every entry is billed once ($0.005), so send all names in ONE call (lists download once per run). Use names for bare strings and queries when you have per-name country / dateOfBirth / entityType or want your own id echoed. Per query, dateOfBirth drops listed individuals whose recorded birth year differs by more than 1 year (entries without a DOB are kept); country only sets country_match (true/false/null) unless excludeNonMatchingCountry=true, which then drops matches whose listed countries exclude it (entries without country data are kept). entityType: a query\'s own value wins over the top-level one; "entity" means anything that is not an individual (organisations, vessels, aircraft), and list entries of unknown type always pass. lists: omit for all five; a list whose download fails is reported in lists_unavailable rather than failing the run. minScore: a candidate is returned only if its 0-100 name similarity is >= minScore; it does not change the price - 85 default, 90-95 for large batches with fewer false positives, 75-80 for transliterated names. maxMatchesPerName trims matches[] (best first) but match_count still counts all. ' + DISCLAIMER,
         ].join('\n'),
         inputSchema: {
             names: z
                 .array(z.string().min(1))
                 .optional()
-                .describe('Plain names of people or organisations to screen, e.g. ["Vladimir Putin","Acme Trading LLC"]. Optional if queries is given.'),
+                .describe('Optional if queries is given (at least one of the two is required). Plain person or organisation names (non-empty strings, any order/case/diacritics); $0.005 each. Example: ["Vladimir Putin","Acme Trading LLC"]'),
             queries: z
                 .array(
                     z.object({
-                        name: z.string().min(1).describe('Person or organisation name to screen, e.g. "Ali Khamenei"'),
-                        id: z.string().optional().describe('Your own reference echoed in the output row, e.g. "cust-42"'),
-                        country: z.string().optional().describe('ISO-2 code ("IR") or country name; adds country_match to each match'),
-                        dateOfBirth: z.string().optional().describe('YYYY or YYYY-MM-DD, e.g. "1939-04-19"; drops listed individuals whose birth year differs by more than 1 year'),
-                        entityType: z.enum(['individual', 'entity', 'any']).optional().describe('Restrict to individuals or entities (organisations/vessels); overrides the top-level entityType'),
+                        name: z.string().min(1).describe('Required. Person or organisation name to screen (non-empty), e.g. "Ali Khamenei"'),
+                        id: z.string().optional().describe('Optional. Your own reference echoed in the output row, e.g. "cust-42"'),
+                        country: z.string().optional().describe('Optional. ISO 3166-1 alpha-2 code ("IR") or English country name ("Iran"); adds country_match to each match (filters only with excludeNonMatchingCountry=true)'),
+                        dateOfBirth: z.string().optional().describe('Optional. Format YYYY or YYYY-MM-DD, e.g. "1939" or "1939-04-19"; drops listed individuals whose birth year differs by more than 1 year'),
+                        entityType: z.enum(['individual', 'entity', 'any']).optional().describe('Optional, one of "individual" | "entity" | "any"; default = top-level entityType. "entity" = organisations, vessels, aircraft'),
                     }),
                 )
                 .optional()
-                .describe('Names with per-name filters. Example: [{"name":"Ali Khamenei","id":"cust-42","country":"IR","dateOfBirth":"1939","entityType":"individual"}]. Optional if names is given.'),
+                .describe('Optional if names is given. {name, id?, country?, dateOfBirth?, entityType?} objects with per-name filters; $0.005 each. Example: [{"name":"Ali Khamenei","id":"cust-42","country":"IR","dateOfBirth":"1939","entityType":"individual"}]'),
             lists: z
                 .array(z.enum(LISTS))
                 .optional()
-                .describe('Lists to screen against: OFAC_SDN, OFAC_CONS, EU, UK, UN. Default: all five. Example: ["OFAC_SDN","EU"].'),
+                .describe('Optional, default all five. Any subset of "OFAC_SDN" | "OFAC_CONS" | "EU" | "UK" | "UN" (ids from list_sources). Example: ["OFAC_SDN","EU"]'),
             minScore: z
                 .number()
                 .int()
                 .min(60)
                 .max(100)
                 .optional()
-                .describe('Fuzzy name-score threshold 60-100 (default 85). Use 90+ for fewer false positives, ~80 for more recall.'),
+                .describe('Optional integer 60-100, default 85. Minimum 0-100 fuzzy name-similarity score for a match. Use 90+ for fewer false positives, ~80 for more recall. Example: 90'),
             maxMatchesPerName: z
                 .number()
                 .int()
                 .min(1)
                 .max(100)
                 .optional()
-                .describe('Top matches returned per name, 1-100 (default 10); match_count still reports the total.'),
+                .describe('Optional integer 1-100, default 10. Top matches returned per name (best first); match_count still reports the total. Example: 3'),
             entityType: z
                 .enum(['individual', 'entity', 'any'])
                 .optional()
-                .describe('Default entity filter for all names: "any" (default), "individual" or "entity". A query\'s own entityType wins.'),
+                .describe('Optional, one of "any" | "individual" | "entity", default "any". Entity filter for all names; a query\'s own entityType wins. Example: "entity"'),
             excludeNonMatchingCountry: z
                 .boolean()
                 .optional()
-                .describe('Default false. If true, matches whose listed countries do not include the query country are removed (entries without country data are kept). Needs queries[].country.'),
+                .describe('Optional boolean, default false. true removes matches whose listed countries do not include the query country (entries without country data are kept). No effect without queries[].country.'),
         },
         outputSchema: {
             items: z.array(z.record(z.unknown())).describe('Dataset rows: type=screening or type=error'),
@@ -98,8 +98,9 @@ server.registerTool(
             'WHAT: Static list of the official sanctions lists screen_names checks (id, name, issuing authority, download URL), the 0-100 score scale and the legal disclaimer.',
             'WHEN TO USE: to choose the lists parameter for screen_names, cite sources in a report, or explain coverage.',
             'WHEN NOT TO USE: to screen a name - use screen_names. Does not download lists or report list freshness.',
-            'COST: free; local, no network, no APIFY_TOKEN, deterministic.',
-            'RETURNS: {sources:[{id,name,authority,url}], score_scale, disclaimer}. Takes no arguments.',
+            'COST: free; local, no network, no APIFY_TOKEN, deterministic. (screen_names costs $0.005 per name.)',
+            'RETURNS: {sources:[{id,name,authority,url}], score_scale, disclaimer}.',
+            'PARAMETERS: None: call with an empty object {}; the result is static and cannot be filtered. Its output feeds screen_names: each sources[].id (OFAC_SDN, OFAC_CONS, EU, UK, UN) is a valid value for its lists parameter, and score_scale explains how its minScore threshold is applied.',
             'EXAMPLE: {} -> {"sources":[{"id":"OFAC_SDN","authority":"US Treasury OFAC",...},...]}',
         ].join('\n'),
         inputSchema: {},
